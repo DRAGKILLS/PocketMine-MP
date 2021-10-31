@@ -563,7 +563,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	}
 
 	public function spawnTo(Player $player) : void{
-		if($this->spawned and $player->spawned and $this->isAlive() and $player->isAlive() and $player->getLevelNonNull() === $this->level and $player->canSee($this) and !$this->isSpectator()){
+		if($this->spawned and $player->spawned and $this->isAlive() and $player->isAlive() and $player->canSee($this) and !$this->isSpectator()){
 			parent::spawnTo($player);
 		}
 	}
@@ -1117,7 +1117,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 		}
 
 		if($this->getHealth() <= 0){
-			$this->respawn();
+			$this->actuallyRespawn();
 		}
 	}
 
@@ -3891,6 +3891,10 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 			return;
 		}
 
+		$this->actuallyRespawn();
+	}
+
+	protected function actuallyRespawn() : void{
 		$ev = new PlayerRespawnEvent($this, $this->getSpawn());
 		$ev->call();
 

@@ -20,13 +20,13 @@ while getopts "p:f:l" OPTION 2> /dev/null; do
 done
 
 if [ "$PHP_BINARY" == "" ]; then
-	if [ -f ./bin/php7/bin/php ]; then
+	if [ -f ./bin/php8/bin/php ]; then
 		export PHPRC=""
-		PHP_BINARY="./bin/php7/bin/php"
+		PHP_BINARY="./bin/php8/bin/php"
 	elif [[ ! -z $(type php) ]]; then
 		PHP_BINARY=$(type -p php)
 	else
-		echo "Couldn't find a working PHP 7 binary, please use the installer."
+		echo "Couldn't find a working PHP 8 binary, please use the installer."
 		exit 1
 	fi
 fi

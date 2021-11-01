@@ -13,3 +13,4 @@
 [submodule "src/pocketmine/resources/vanilla"]
 	path = src/pocketmine/resources/vanilla
 	url = https://github.com/DRAGKILLS/BedrockData.git
+	branch = master

@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\convert;
 
+use pocketmine\network\mcpe\protocol\LoginPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\SingletonTrait;
 use function array_key_exists;
@@ -35,7 +37,7 @@ use function json_decode;
 /**
  * This class handles translation between network item ID+metadata to PocketMine-MP internal ID+metadata and vice versa.
  */
-final class ItemTranslator{
+final class ItemTranslator {
 	use SingletonTrait;
 
 	/**
@@ -62,8 +64,33 @@ final class ItemTranslator{
 	 */
 	private $complexNetToCoreMapping = [];
 
+	/**
+	 * @param int[] $simpleMappings
+	 * @param int[][] $complexMappings
+	 * @phpstan-param array<string, int> $simpleMappings
+	 * @phpstan-param array<string, array<int, int>> $complexMappings
+	 */
+	public function __construct(ItemTypeDictionary $dictionary, array $simpleMappings, array $complexMappings){
+		foreach($dictionary->getDictionary()->getEntries() as $entry){
+			$stringId = $entry->getStringId();
+			$netId = $entry->getNumericId();
+			if(isset($complexMappings[$stringId])){
+				[$id, $meta] = $complexMappings[$stringId];
+				$this->complexCoreToNetMapping[$id][$meta] = $netId;
+				$this->complexNetToCoreMapping[$netId] = [$id, $meta];
+			}elseif(isset($simpleMappings[$stringId])){
+				$this->simpleCoreToNetMapping[$simpleMappings[$stringId]] = $netId;
+				$this->simpleNetToCoreMapping[$netId] = $simpleMappings[$stringId];
+			}else{
+				//not all items have a legacy mapping - for now, we only support the ones that do
+				continue;
+			}
+		}
+	}
+
 	private static function make() : self{
 		$data = file_get_contents(\pocketmine\RESOURCE_PATH . '/vanilla/r16_to_current_item_map.json');
+
 		if($data === false) throw new AssumptionFailedError("Missing required resource file");
 		$json = json_decode($data, true);
 		if(!is_array($json) or !isset($json["simple"], $json["complex"]) || !is_array($json["simple"]) || !is_array($json["complex"])){
@@ -113,30 +140,6 @@ final class ItemTranslator{
 		}
 
 		return new self(ItemTypeDictionary::getInstance(), $simpleMappings, $complexMappings);
-	}
-
-	/**
-	 * @param int[] $simpleMappings
-	 * @param int[][] $complexMappings
-	 * @phpstan-param array<string, int> $simpleMappings
-	 * @phpstan-param array<string, array<int, int>> $complexMappings
-	 */
-	public function __construct(ItemTypeDictionary $dictionary, array $simpleMappings, array $complexMappings){
-		foreach($dictionary->getEntries() as $entry){
-			$stringId = $entry->getStringId();
-			$netId = $entry->getNumericId();
-			if(isset($complexMappings[$stringId])){
-				[$id, $meta] = $complexMappings[$stringId];
-				$this->complexCoreToNetMapping[$id][$meta] = $netId;
-				$this->complexNetToCoreMapping[$netId] = [$id, $meta];
-			}elseif(isset($simpleMappings[$stringId])){
-				$this->simpleCoreToNetMapping[$simpleMappings[$stringId]] = $netId;
-				$this->simpleNetToCoreMapping[$netId] = $simpleMappings[$stringId];
-			}else{
-				//not all items have a legacy mapping - for now, we only support the ones that do
-				continue;
-			}
-		}
 	}
 
 	/**

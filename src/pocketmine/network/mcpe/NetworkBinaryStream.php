@@ -364,7 +364,7 @@ class NetworkBinaryStream extends BinaryStream{
 			$extraData->putLInt(0); //CanPlaceOn entry count (TODO)
 			$extraData->putLInt(0); //CanDestroy entry count (TODO)
 
-			if($netId === ItemTypeDictionary::getInstance()->fromStringId("minecraft:shield")){
+			if($netId === ItemTypeDictionary::getInstance()->getDictionary()->fromStringId("minecraft:shield")){
 				$extraData->putLLong(0); //"blocking tick" (ffs mojang)
 			}
 			return $extraData->getBuffer();

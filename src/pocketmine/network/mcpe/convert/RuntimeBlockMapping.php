@@ -28,6 +28,8 @@ use pocketmine\nbt\NBT;
 use pocketmine\nbt\NetworkLittleEndianNBTStream;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\NetworkBinaryStream;
+use pocketmine\network\mcpe\protocol\LoginPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\utils\AssumptionFailedError;
 use function file_get_contents;
 use function json_decode;
@@ -37,19 +39,22 @@ use function json_decode;
  */
 final class RuntimeBlockMapping{
 
-	/** @var int[] */
-	private static $legacyToRuntimeMap = [];
-	/** @var int[] */
-	private static $runtimeToLegacyMap = [];
 	/** @var CompoundTag[]|null */
 	private static $bedrockKnownStates = null;
+	/** @var BlockMapping[] */
+	private static $mappings = [];
+
+	public const ACCEPTED_PROTOCOLS_toString = [
+		ProtocolInfo::CURRENT_PROTOCOL => "471",
+		ProtocolInfo::BEDROCK_1_17_30 => "465"
+	];
 
 	private function __construct(){
 		//NOOP
 	}
 
 	public static function init() : void{
-		$canonicalBlockStatesFile = file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/canonical_block_states.nbt");
+		$canonicalBlockStatesFile = file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/canonical_block_states_" . "471" . ".nbt");
 		if($canonicalBlockStatesFile === false){
 			throw new AssumptionFailedError("Missing required resource file");
 		}
@@ -60,15 +65,25 @@ final class RuntimeBlockMapping{
 		}
 		self::$bedrockKnownStates = $list;
 
-		self::setupLegacyMappings();
+		self::setup(ProtocolInfo::BEDROCK_1_17_30);
+
+		self::$mappings[ProtocolInfo::CURRENT_PROTOCOL] = self::setup(ProtocolInfo::CURRENT_PROTOCOL);
 	}
 
-	private static function setupLegacyMappings() : void{
+	private static function lazyInit() : void{
+		if(self::$bedrockKnownStates === null){
+			self::init();
+		}
+	}
+
+	private static function setup(int $protocol): BlockMapping
+	{
+		$mapping = new BlockMapping([], []);
 		$legacyIdMap = json_decode(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/block_id_map.json"), true);
 
 		/** @var R12ToCurrentBlockMapEntry[] $legacyStateMap */
 		$legacyStateMap = [];
-		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/r12_to_current_block_map.bin"));
+		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/r12_to_current_block_map_" . $protocol . ".bin"));
 		$nbtReader = new NetworkLittleEndianNBTStream();
 		while(!$legacyStateMapReader->feof()){
 			$id = $legacyStateMapReader->getString();
@@ -87,7 +102,7 @@ final class RuntimeBlockMapping{
 		 * @var int[][] $idToStatesMap string id -> int[] list of candidate state indices
 		 */
 		$idToStatesMap = [];
-		foreach(self::$bedrockKnownStates as $k => $state){
+		foreach(self::getBedrockKnownStates() as $k => $state){
 			$idToStatesMap[$state->getString("name")][] = $k;
 		}
 		foreach($legacyStateMap as $pair){
@@ -109,20 +124,15 @@ final class RuntimeBlockMapping{
 				throw new \RuntimeException("Mapped new state does not appear in network table");
 			}
 			foreach($idToStatesMap[$mappedName] as $k){
-				$networkState = self::$bedrockKnownStates[$k];
+				$networkState = self::getBedrockKnownStates()[$k];
 				if($mappedState->equals($networkState)){
-					self::registerMapping($k, $id, $data);
+					$mapping->registerMapping($k, $id, $data);
 					continue 2;
 				}
 			}
 			throw new \RuntimeException("Mapped new state does not appear in network table");
 		}
-	}
-
-	private static function lazyInit() : void{
-		if(self::$bedrockKnownStates === null){
-			self::init();
-		}
+		return $mapping;
 	}
 
 	public static function toStaticRuntimeId(int $id, int $meta = 0) : int{
@@ -132,7 +142,7 @@ final class RuntimeBlockMapping{
 		 * if not found, try id+0 (strip meta)
 		 * if still not found, return update! block
 		 */
-		return self::$legacyToRuntimeMap[($id << 4) | $meta] ?? self::$legacyToRuntimeMap[$id << 4] ?? self::$legacyToRuntimeMap[BlockIds::INFO_UPDATE << 4];
+		return self::getMapping(-1)->toStaticRuntimeId($id, $meta);
 	}
 
 	/**
@@ -140,13 +150,7 @@ final class RuntimeBlockMapping{
 	 */
 	public static function fromStaticRuntimeId(int $runtimeId) : array{
 		self::lazyInit();
-		$v = self::$runtimeToLegacyMap[$runtimeId];
-		return [$v >> 4, $v & 0xf];
-	}
-
-	private static function registerMapping(int $staticRuntimeId, int $legacyId, int $legacyMeta) : void{
-		self::$legacyToRuntimeMap[($legacyId << 4) | $legacyMeta] = $staticRuntimeId;
-		self::$runtimeToLegacyMap[$staticRuntimeId] = ($legacyId << 4) | $legacyMeta;
+		return self::getMapping(-1)->fromStaticRuntimeId($runtimeId);
 	}
 
 	/**
@@ -155,5 +159,11 @@ final class RuntimeBlockMapping{
 	public static function getBedrockKnownStates() : array{
 		self::lazyInit();
 		return self::$bedrockKnownStates;
+	}
+
+	public static function getMapping(int $protocol)
+	{
+		self::lazyInit();
+		return self::$mappings[$protocol] ?? self::$mappings[ProtocolInfo::CURRENT_PROTOCOL];
 	}
 }

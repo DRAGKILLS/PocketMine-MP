@@ -261,7 +261,7 @@ class NetworkBinaryStream extends BinaryStream{
 				$extraData->get($extraData->getLShort());
 			}
 
-			if($netId === ItemTypeDictionary::getInstance()->fromStringId("minecraft:shield")){
+			if($netId === ItemTypeDictionary::getInstance()->getDictionary()->fromStringId("minecraft:shield")){
 				$extraData->getLLong(); //"blocking tick" (ffs mojang)
 			}
 

@@ -33,6 +33,7 @@ use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\utils\AssumptionFailedError;
 use function file_get_contents;
 use function json_decode;
+use const pocketmine\RESOURCE_PATH;
 
 /**
  * @internal
@@ -54,16 +55,8 @@ final class RuntimeBlockMapping{
 	}
 
 	public static function init() : void{
-		$canonicalBlockStatesFile = file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/canonical_block_states_" . "471" . ".nbt");
-		if($canonicalBlockStatesFile === false){
-			throw new AssumptionFailedError("Missing required resource file");
-		}
-		$stream = new NetworkBinaryStream($canonicalBlockStatesFile);
-		$list = [];
-		while(!$stream->feof()){
-			$list[] = $stream->getNbtCompoundRoot();
-		}
-		self::$bedrockKnownStates = $list;
+		self::setupPlatte(ProtocolInfo::CURRENT_PROTOCOL);
+//		self::setupPlatte(ProtocolInfo::BEDROCK_1_17_30);
 
 		self::setup(ProtocolInfo::BEDROCK_1_17_30);
 
@@ -76,14 +69,31 @@ final class RuntimeBlockMapping{
 		}
 	}
 
+	private static function setupPlatte(int $protocol)
+	{
+		if(!in_array($protocol, ProtocolInfo::ACCEPTED_PROTOCOLS)){
+			throw new AssumptionFailedError("Invalid Protocol {$protocol}");
+		}
+		$canonicalBlockStatesFile = file_get_contents(RESOURCE_PATH . "vanilla/canonical_block_states_" . self::ACCEPTED_PROTOCOLS_toString[$protocol] . ".nbt");
+		if($canonicalBlockStatesFile === false){
+			throw new AssumptionFailedError("Missing required resource file");
+		}
+		$stream = new NetworkBinaryStream($canonicalBlockStatesFile);
+		$list = [];
+		while(!$stream->feof()){
+			$list[] = $stream->getNbtCompoundRoot();
+		}
+		self::$bedrockKnownStates = $list;
+	}
+
 	private static function setup(int $protocol): BlockMapping
 	{
 		$mapping = new BlockMapping([], []);
-		$legacyIdMap = json_decode(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/block_id_map.json"), true);
+		$legacyIdMap = json_decode(file_get_contents(RESOURCE_PATH . "vanilla/block_id_map.json"), true);
 
 		/** @var R12ToCurrentBlockMapEntry[] $legacyStateMap */
 		$legacyStateMap = [];
-		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(\pocketmine\RESOURCE_PATH . "vanilla/r12_to_current_block_map_" . $protocol . ".bin"));
+		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(RESOURCE_PATH . "vanilla/r12_to_current_block_map_" . $protocol . ".bin"));
 		$nbtReader = new NetworkLittleEndianNBTStream();
 		while(!$legacyStateMapReader->feof()){
 			$id = $legacyStateMapReader->getString();

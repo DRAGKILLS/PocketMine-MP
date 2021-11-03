@@ -57,7 +57,7 @@ final class RuntimeBlockMapping{
 	public static function init() : void{
 		self::setupPlatte(ProtocolInfo::CURRENT_PROTOCOL);
 
-//		self::setupJsonMapping(ProtocolInfo::BEDROCK_1_17_30);
+//		self::setupJsonPlatte(ProtocolInfo::BEDROCK_1_17_30);
 
 		self::$mappings[ProtocolInfo::CURRENT_PROTOCOL] = self::setupLegacyMappings(ProtocolInfo::CURRENT_PROTOCOL);
 	}
@@ -92,7 +92,7 @@ final class RuntimeBlockMapping{
 
 		/** @var R12ToCurrentBlockMapEntry[] $legacyStateMap */
 		$legacyStateMap = [];
-		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(RESOURCE_PATH . "vanilla/r12_to_current_block_map_" . $protocol . ".bin"));
+		$legacyStateMapReader = new NetworkBinaryStream(file_get_contents(sprintf("%s_%s.bin", RESOURCE_PATH . "vanilla/" . "r12_to_current_block_map", $protocol)));
 		$nbtReader = new NetworkLittleEndianNBTStream();
 		while(!$legacyStateMapReader->feof()){
 			$id = $legacyStateMapReader->getString();

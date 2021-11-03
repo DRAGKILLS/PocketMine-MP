@@ -484,6 +484,7 @@
                 "issues": "https://github.com/pmmp/SPL/issues",
                 "source": "https://github.com/pmmp/SPL/tree/0.4.2"
             },
+            "abandoned": true,
             "time": "2021-01-15T15:15:23+00:00"
         }
     ],

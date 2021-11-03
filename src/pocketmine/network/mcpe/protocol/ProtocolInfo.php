@@ -37,7 +37,7 @@ interface ProtocolInfo{
 	 */
 
 	/** Actual Minecraft: PE protocol version */
-	public const CURRENT_PROTOCOL = 471;
+	public const CURRENT_PROTOCOL = 471;//1.17.40
 
 	//1.17.30 to 1.17.34
 	public const BEDROCK_1_17_30 = 465;

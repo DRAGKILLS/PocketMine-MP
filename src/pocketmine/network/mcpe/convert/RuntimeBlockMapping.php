@@ -56,11 +56,10 @@ final class RuntimeBlockMapping{
 
 	public static function init() : void{
 		self::setupPlatte(ProtocolInfo::CURRENT_PROTOCOL);
-//		self::setupPlatte(ProtocolInfo::BEDROCK_1_17_30);
 
-		self::setup(ProtocolInfo::BEDROCK_1_17_30);
+//		self::setupJsonMapping(ProtocolInfo::BEDROCK_1_17_30);
 
-		self::$mappings[ProtocolInfo::CURRENT_PROTOCOL] = self::setup(ProtocolInfo::CURRENT_PROTOCOL);
+		self::$mappings[ProtocolInfo::CURRENT_PROTOCOL] = self::setupLegacyMappings(ProtocolInfo::CURRENT_PROTOCOL);
 	}
 
 	private static function lazyInit() : void{
@@ -86,7 +85,7 @@ final class RuntimeBlockMapping{
 		self::$bedrockKnownStates = $list;
 	}
 
-	private static function setup(int $protocol): BlockMapping
+	private static function setupLegacyMappings(int $protocol): BlockMapping
 	{
 		$mapping = new BlockMapping([], []);
 		$legacyIdMap = json_decode(file_get_contents(RESOURCE_PATH . "vanilla/block_id_map.json"), true);

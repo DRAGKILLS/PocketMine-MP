@@ -55,9 +55,9 @@ final class RuntimeBlockMapping{
 	}
 
 	public static function init() : void{
-		self::setupPlatte(ProtocolInfo::CURRENT_PROTOCOL);
+		self::setupPallet(ProtocolInfo::CURRENT_PROTOCOL);
 
-//		self::setupJsonPlatte(ProtocolInfo::BEDROCK_1_17_30);
+//		self::setupJsonPallet(ProtocolInfo::BEDROCK_1_17_30);
 
 		self::$mappings[ProtocolInfo::CURRENT_PROTOCOL] = self::setupLegacyMappings(ProtocolInfo::CURRENT_PROTOCOL);
 	}
@@ -68,7 +68,7 @@ final class RuntimeBlockMapping{
 		}
 	}
 
-	private static function setupPlatte(int $protocol)
+	private static function setupPallet(int $protocol)
 	{
 		if(!in_array($protocol, ProtocolInfo::ACCEPTED_PROTOCOLS)){
 			throw new AssumptionFailedError("Invalid Protocol {$protocol}");

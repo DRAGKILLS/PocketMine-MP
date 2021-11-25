@@ -43,7 +43,7 @@ interface ProtocolInfo{
 	public const BEDROCK_1_17_30 = 465;
 
 	/** Accepted Minecraft: PE protocol versions */
-	public const ACCEPTED_PROTOCOLS = [self::CURRENT_PROTOCOL, self::BEDROCK_1_17_30];
+	public const ACCEPTED_PROTOCOLS = [self::CURRENT_PROTOCOL/*, self::BEDROCK_1_17_30*/];
 
 	/** Current Minecraft PE version reported by the server. This is usually the earliest currently supported version. */
 	public const MINECRAFT_VERSION = 'v1.17.40';
